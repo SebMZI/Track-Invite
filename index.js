@@ -1,17 +1,27 @@
-const { Client, GatewayIntentBits, Events } = require("discord.js");
+const { Client, GatewayIntentBits } = require("discord.js");
+const fs = require("node:fs");
+const path = require("node:path");
 require("dotenv").config();
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildInvites],
 });
 
-client.on(Events.InviteCreate, (invite) => {
-  console.log("✅ InviteCreate fired!");
-  console.log(`Invite code: ${invite.code}, channel: ${invite.channel?.name}`);
-});
+client.invitesCache = new Map();
 
-client.once("ready", () => {
-  console.log(`Logged in as ${client.user.tag}`);
-});
+const eventsPath = path.join(__dirname, "events");
+const eventFiles = fs
+  .readdirSync(eventsPath)
+  .filter((file) => file.endsWith(".js"));
+
+for (const file of eventFiles) {
+  const filePath = path.join(eventsPath, file);
+  const event = require(filePath);
+  if (event.once) {
+    client.once(event.name, (...args) => event.execute(...args));
+  } else {
+    client.on(event.name, (...args) => event.execute(...args));
+  }
+}
 
 client.login(process.env.DISCORD_TOKEN);
