@@ -23,5 +23,12 @@ CREATE TABLE IF NOT EXISTS member_joins (
 )
 `);
 
+db.run(`
+CREATE TABLE IF NOT EXISTS guild_settings (
+  guild_id TEXT PRIMARY KEY,
+  welcome_channel_id TEXT
+)
+`);
+
 console.log("✅ Database initialized");
 db.close();

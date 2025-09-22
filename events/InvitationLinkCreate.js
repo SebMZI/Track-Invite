@@ -4,6 +4,7 @@ const db = require("../db");
 module.exports = {
   name: Events.InviteCreate,
   async execute(invite) {
+    console.log("Invite Created!");
     db.run(
       `INSERT INTO invites (code, inviter_id, channel_id, guild_id, uses)
        VALUES (?, ?, ?, ?, ?)`,
