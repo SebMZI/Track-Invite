@@ -12,3 +12,4 @@ yarn-error.log*
 .npm
 .DS_Store
 config.json
+invites.db
