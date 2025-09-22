@@ -1,5 +1,4 @@
 const db = require("../db.js");
-// Make db.run awaitable
 
 function runAsync(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -10,7 +9,6 @@ function runAsync(sql, params = []) {
   });
 }
 
-// Make db.get awaitable
 function getAsync(sql, params = []) {
   return new Promise((resolve, reject) => {
     db.get(sql, params, (err, row) => {
