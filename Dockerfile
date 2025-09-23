@@ -31,12 +31,15 @@ FROM node:22-alpine3.22 AS runner
 WORKDIR /app
 COPY --from=build /app ./
 
+# Run as non-root user
+RUN addgroup -S app && adduser -S app -G app
+RUN chown -R app:app /app
+
+USER app
+
 ENV NODE_ENV=production
 ENV PORT=3051
 EXPOSE 3051
 
-# Run as non-root user
-RUN addgroup -S app && adduser -S app -G app
-USER app
 
 CMD ["npm", "start"]
