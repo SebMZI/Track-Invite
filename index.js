@@ -3,7 +3,6 @@ const fs = require("node:fs");
 const path = require("node:path");
 require("dotenv").config();
 const { initializeDatabase } = require("./init_db.js");
-const db = require("./db.js");
 
 // Check if database is corrupted and recreate if needed
 const dbPath = "./invites.db";
@@ -12,6 +11,9 @@ if (dbCorrupted && fs.existsSync(dbPath)) {
   console.log("🔄 Resetting database...");
   fs.unlinkSync(dbPath);
 }
+
+// Load db AFTER checking for reset
+const db = require("./db.js");
 
 const client = new Client({
   intents: [

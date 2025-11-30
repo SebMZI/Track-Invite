@@ -19,8 +19,13 @@ async function initializeDatabase(db) {
       completed++;
       console.log(`[Schema] Created table (${completed}/${total})`);
       if (completed === total) {
-        console.log("✅ Database ready");
-        resolve();
+        // Verify tables were created
+        verifyTables(db)
+          .then(() => {
+            console.log("✅ Database ready with all tables");
+            resolve();
+          })
+          .catch(reject);
       }
     };
 
@@ -73,6 +78,32 @@ async function initializeDatabase(db) {
           reject(err);
         } else {
           checkComplete();
+        }
+      }
+    );
+  });
+}
+
+async function verifyTables(db) {
+  return new Promise((resolve, reject) => {
+    db.all(
+      `SELECT name FROM sqlite_master WHERE type='table' AND name IN ('invites', 'member_joins', 'guild_settings')`,
+      (err, tables) => {
+        if (err) {
+          reject(err);
+        } else if (!tables || tables.length !== 3) {
+          reject(
+            new Error(
+              `Expected 3 tables, found ${tables?.length || 0}: ${
+                tables?.map((t) => t.name).join(", ") || "none"
+              }`
+            )
+          );
+        } else {
+          console.log(
+            `✓ Verified tables: ${tables.map((t) => t.name).join(", ")}`
+          );
+          resolve();
         }
       }
     );
