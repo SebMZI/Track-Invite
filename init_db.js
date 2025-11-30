@@ -1,8 +1,9 @@
 const fs = require("fs");
+const path = require("path");
 const sqlite3 = require("sqlite3").verbose();
 
 async function initializeDatabase(db) {
-  const dbPath = "./invites.db";
+  const dbPath = path.resolve(__dirname, "invites.db");
   const dbExists = fs.existsSync(dbPath);
 
   if (dbExists) {
@@ -112,7 +113,8 @@ async function verifyTables(db) {
 
 // Support running as standalone script (from Dockerfile)
 if (require.main === module) {
-  const db = new sqlite3.Database("./invites.db");
+  const dbPath = path.resolve(__dirname, "invites.db");
+  const db = new sqlite3.Database(dbPath);
 
   initializeDatabase(db)
     .then(() => {

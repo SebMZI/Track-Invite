@@ -15,6 +15,9 @@ if (dbCorrupted && fs.existsSync(dbPath)) {
 // Load db AFTER checking for reset
 const db = require("./db.js");
 
+// Create a flag to ensure DB is initialized before Discord events fire
+let dbInitialized = false;
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -68,6 +71,7 @@ async function loadEvents() {
 async function start() {
   try {
     await initializeDatabase(db);
+    dbInitialized = true; // Mark DB as ready
     console.log("📦 Database ready, starting Discord bot...");
 
     await loadCommands();
