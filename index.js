@@ -3,6 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 require("dotenv").config();
 const { initializeDatabase } = require("./init_db.js");
+const db = require("./db.js");
 
 const client = new Client({
   intents: [
@@ -56,7 +57,7 @@ async function loadEvents() {
 
 async function start() {
   try {
-    await initializeDatabase();
+    await initializeDatabase(db);
     console.log("📦 Database ready, starting Discord bot...");
 
     await loadCommands();
