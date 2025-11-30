@@ -2,6 +2,7 @@ const { Client, GatewayIntentBits, Collection } = require("discord.js");
 const fs = require("node:fs");
 const path = require("node:path");
 require("dotenv").config();
+const { initializeDatabase } = require("./init_db.js");
 
 const client = new Client({
   intents: [
@@ -49,4 +50,15 @@ for (const file of eventFiles) {
   }
 }
 
-client.login(process.env.DISCORD_TOKEN);
+async function start() {
+  try {
+    await initializeDatabase();
+    console.log("📦 Database ready, starting Discord bot...");
+    client.login(process.env.DISCORD_TOKEN);
+  } catch (error) {
+    console.error("❌ Failed to initialize database:", error);
+    process.exit(1);
+  }
+}
+
+start();
