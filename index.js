@@ -5,6 +5,14 @@ require("dotenv").config();
 const { initializeDatabase } = require("./init_db.js");
 const db = require("./db.js");
 
+// Check if database is corrupted and recreate if needed
+const dbPath = "./invites.db";
+const dbCorrupted = process.env.RESET_DB === "true";
+if (dbCorrupted && fs.existsSync(dbPath)) {
+  console.log("🔄 Resetting database...");
+  fs.unlinkSync(dbPath);
+}
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
