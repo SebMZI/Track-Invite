@@ -5,9 +5,6 @@ module.exports = {
   name: Events.ClientReady,
   once: true,
   async execute(client) {
-    // Wait a moment to ensure database is fully initialized
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
     client.invitesCache = new Map();
 
     for (const guild of client.guilds.cache.values()) {

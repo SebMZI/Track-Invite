@@ -1,138 +1,86 @@
-const fs = require("fs");
-const path = require("path");
 const sqlite3 = require("sqlite3").verbose();
+const path = require("path");
 
-async function initializeDatabase(db) {
-  const dbPath = path.resolve(__dirname, "invites.db");
-  const dbExists = fs.existsSync(dbPath);
+const dbPath = path.resolve(__dirname, "invites.db");
 
-  if (dbExists) {
-    console.log("📦 Database found, checking schema...");
-  } else {
-    console.log("📝 Creating new database...");
-  }
-
+function initializeDatabase() {
   return new Promise((resolve, reject) => {
-    let completed = 0;
-    const total = 3;
-
-    const checkComplete = () => {
-      completed++;
-      console.log(`[Schema] Created table (${completed}/${total})`);
-      if (completed === total) {
-        // Verify tables were created
-        verifyTables(db)
-          .then(() => {
-            console.log("✅ Database ready with all tables");
-            resolve();
-          })
-          .catch(reject);
+    const db = new sqlite3.Database(dbPath, (err) => {
+      if (err) {
+        reject(err);
+        return;
       }
-    };
 
-    db.run(
-      `CREATE TABLE IF NOT EXISTS invites (
-        code TEXT PRIMARY KEY,
-        inviter_id TEXT,
-        channel_id TEXT,
-        guild_id TEXT,
-        uses INTEGER DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )`,
-      (err) => {
-        if (err) {
-          console.error("❌ Error creating invites table:", err);
-          reject(err);
-        } else {
-          checkComplete();
-        }
-      }
-    );
+      console.log("📝 Initializing database schema...");
 
-    db.run(
-      `CREATE TABLE IF NOT EXISTS member_joins (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        member_id TEXT,
-        inviter_id TEXT,
-        invite_code TEXT,
-        guild_id TEXT,
-        joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )`,
-      (err) => {
-        if (err) {
-          console.error("❌ Error creating member_joins table:", err);
-          reject(err);
-        } else {
-          checkComplete();
-        }
-      }
-    );
+      // Run all table creation in series using serialize
+      db.serialize(() => {
+        db.run(
+          `CREATE TABLE IF NOT EXISTS invites (
+            code TEXT PRIMARY KEY,
+            inviter_id TEXT,
+            channel_id TEXT,
+            guild_id TEXT,
+            uses INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          )`,
+          (err) => {
+            if (err) {
+              console.error("❌ Error creating invites table:", err);
+              reject(err);
+            }
+          }
+        );
 
-    db.run(
-      `CREATE TABLE IF NOT EXISTS guild_settings (
-        guild_id TEXT PRIMARY KEY,
-        welcome_channel_id TEXT
-      )`,
-      (err) => {
-        if (err) {
-          console.error("❌ Error creating guild_settings table:", err);
-          reject(err);
-        } else {
-          checkComplete();
-        }
-      }
-    );
-  });
-}
+        db.run(
+          `CREATE TABLE IF NOT EXISTS member_joins (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            member_id TEXT,
+            inviter_id TEXT,
+            invite_code TEXT,
+            guild_id TEXT,
+            joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          )`,
+          (err) => {
+            if (err) {
+              console.error("❌ Error creating member_joins table:", err);
+              reject(err);
+            }
+          }
+        );
 
-async function verifyTables(db) {
-  return new Promise((resolve, reject) => {
-    db.all(
-      `SELECT name FROM sqlite_master WHERE type='table' AND name IN ('invites', 'member_joins', 'guild_settings')`,
-      (err, tables) => {
-        if (err) {
-          reject(err);
-        } else if (!tables || tables.length !== 3) {
-          reject(
-            new Error(
-              `Expected 3 tables, found ${tables?.length || 0}: ${
-                tables?.map((t) => t.name).join(", ") || "none"
-              }`
-            )
-          );
-        } else {
-          console.log(
-            `✓ Verified tables: ${tables.map((t) => t.name).join(", ")}`
-          );
-          resolve();
-        }
-      }
-    );
-  });
-}
-
-// Support running as standalone script (from Dockerfile)
-if (require.main === module) {
-  const dbPath = path.resolve(__dirname, "invites.db");
-  const db = new sqlite3.Database(dbPath);
-
-  initializeDatabase(db)
-    .then(() => {
-      console.log("✅ Standalone initialization completed");
-      db.close((err) => {
-        if (err) {
-          console.error("Error closing database:", err);
-          process.exit(1);
-        }
-        process.exit(0);
+        db.run(
+          `CREATE TABLE IF NOT EXISTS guild_settings (
+            guild_id TEXT PRIMARY KEY,
+            welcome_channel_id TEXT
+          )`,
+          (err) => {
+            if (err) {
+              console.error("❌ Error creating guild_settings table:", err);
+              reject(err);
+            } else {
+              console.log("✅ Database schema initialized");
+              db.close();
+              resolve();
+            }
+          }
+        );
       });
+    });
+  });
+}
+
+// If run as script (from Dockerfile)
+if (require.main === module) {
+  initializeDatabase()
+    .then(() => {
+      console.log("✅ Database setup complete");
+      process.exit(0);
     })
     .catch((err) => {
-      console.error("❌ Standalone initialization failed:", err);
-      db.close();
+      console.error("❌ Database setup failed:", err);
       process.exit(1);
     });
-} else {
-  // Export for use as module
-  module.exports = { initializeDatabase };
 }
+
+module.exports = { initializeDatabase };

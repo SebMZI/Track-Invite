@@ -4,20 +4,6 @@ const path = require("node:path");
 require("dotenv").config();
 const { initializeDatabase } = require("./init_db.js");
 
-// Check if database is corrupted and recreate if needed
-const dbPath = "./invites.db";
-const dbCorrupted = process.env.RESET_DB === "true";
-if (dbCorrupted && fs.existsSync(dbPath)) {
-  console.log("🔄 Resetting database...");
-  fs.unlinkSync(dbPath);
-}
-
-// Load db AFTER checking for reset
-const db = require("./db.js");
-
-// Create a flag to ensure DB is initialized before Discord events fire
-let dbInitialized = false;
-
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -70,16 +56,19 @@ async function loadEvents() {
 
 async function start() {
   try {
-    await initializeDatabase(db);
-    dbInitialized = true; // Mark DB as ready
-    console.log("📦 Database ready, starting Discord bot...");
+    // Initialize database FIRST, before requiring db module
+    await initializeDatabase();
+    console.log("📦 Database ready");
+
+    // NOW load the db module after initialization is complete
+    const db = require("./db.js");
 
     await loadCommands();
     await loadEvents();
 
     client.login(process.env.DISCORD_TOKEN);
   } catch (error) {
-    console.error("❌ Failed to initialize database:", error);
+    console.error("❌ Failed to start:", error);
     process.exit(1);
   }
 }
