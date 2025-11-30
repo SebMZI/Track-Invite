@@ -13,14 +13,8 @@ async function initializeDatabase() {
         return;
       }
 
-      // If DB already exists, just close and resolve
       if (dbExists) {
-        console.log("📦 Database found, using existing data");
-        db.close((err) => {
-          if (err) reject(err);
-          else resolve();
-        });
-        return;
+        console.log("📦 Database found, checking schema...");
       }
 
       let completed = 0;
@@ -29,7 +23,7 @@ async function initializeDatabase() {
       const checkComplete = () => {
         completed++;
         if (completed === total) {
-          console.log("✅ Database created and initialized");
+          console.log("✅ Database ready");
           db.close((err) => {
             if (err) reject(err);
             else resolve();
